@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Book Management System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    form input {
+      width: 30%;
+      padding: 10px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    form button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    form button:hover {
+      background-color: #0056b3;
+    }
+
+    #search {
+      width: 100%;
+      padding: 10px;
+      margin: 15px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    td button {
+      padding: 6px 12px;
+      margin: 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .issue-btn {
+      background-color: #ffc107;
+      color: #000;
+    }
+
+    .return-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .issue-btn:hover { background-color: #e0a800; }
+    .return-btn:hover { background-color: #218838; }
+    .delete-btn:hover { background-color: #a71d2a; }
+  </style>
+</head>
+<body>
+
+  <h1>📚 Library Book Management System</h1>
+
+  <div class="container">
+    <!-- Add Book Form -->
+    <form id="bookForm">
+      <input type="text" id="bookName" placeholder="Book Name" required>
+      <input type="text" id="authorName" placeholder="Author Name" required>
+      <button type="submit">Add Book</button>
+    </form>
+
+    <!-- Search Bar -->
+    <input type="text" id="search" placeholder="🔍 Search by Book or Author...">
+
+    <!-- Book Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>Book Name</th>
+          <th>Author</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="bookList"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const bookForm = document.getElementById("bookForm");
+    const bookList = document.getElementById("bookList");
+    const search = document.getElementById("search");
+
+    // Default stored books
+    const defaultBooks = [
+      { id: 1, name: "The Great Gatsby", author: "F. Scott Fitzgerald", status: "Available" },
+      { id: 2, name: "To Kill a Mockingbird", author: "Harper Lee", status: "Issued" },
+      { id: 3, name: "1984", author: "George Orwell", status: "Available" },
+      { id: 4, name: "The Alchemist", author: "Paulo Coelho", status: "Available" }
+    ];
+
+    // Initialize
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!localStorage.getItem("books")) {
+        localStorage.setItem("books", JSON.stringify(defaultBooks));
+      }
+      loadBooks();
+    });
+
+    // Add New Book
+    bookForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const name = document.getElementById("bookName").value.trim();
+      const author = document.getElementById("authorName").value.trim();
+
+      if (name && author) {
+        const newBook = {
+          id: Date.now(),
+          name,
+          author,
+          status: "Available"
+        };
+        const books = JSON.parse(localStorage.getItem("books")) || [];
+        books.push(newBook);
+        localStorage.setItem("books", JSON.stringify(books));
+        bookForm.reset();
+        loadBooks();
+      }
+    });
+
+    // Load Books
+    function loadBooks() {
+      const books = JSON.parse(localStorage.getItem("books")) || [];
+      bookList.innerHTML = "";
+      books.forEach(book => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${book.name}</td>
+          <td>${book.author}</td>
+          <td>${book.status}</td>
+          <td>
+            <button class="issue-btn" onclick="issueBook(${book.id})">Issue</button>
+            <button class="return-btn" onclick="returnBook(${book.id})">Return</button>
+            <button class="delete-btn" onclick="deleteBook(${book.id})">Delete</button>
+          </td>
+        `;
+        bookList.appendChild(row);
+      });
+    }
+
+    // Search Functionality
+    search.addEventListener("keyup", () => {
+      const term = search.value.toLowerCase();
+      const rows = bookList.querySelectorAll("tr");
+      rows.forEach(row => {
+        const bookName = row.children[0].textContent.toLowerCase();
+        const authorName = row.children[1].textContent.toLowerCase();
+        row.style.display = (bookName.includes(term) || authorName.includes(term)) ? "" : "none";
+      });
+    });
+
+    // Issue Book
+    function issueBook(id) {
+      let books = JSON.parse(localStorage.getItem("books")) || [];
+      books = books.map(book => {
+        if (book.id === id) book.status = "Issued";
+        return book;
+      });
+      localStorage.setItem("books", JSON.stringify(books));
+      loadBooks();
+    }
+
+    // Return Book
+    function returnBook(id) {
+      let books = JSON.parse(localStorage.getItem("books")) || [];
+      books = books.map(book => {
+        if (book.id === id) book.status = "Available";
+        return book;
+      });
+      localStorage.setItem("books", JSON.stringify(books));
+      loadBooks();
+    }
+
+    // Delete Book
+    function deleteBook(id) {
+      let books = JSON.parse(localStorage.getItem("books")) || [];
+      books = books.filter(book => book.id !== id);
+      localStorage.setItem("books", JSON.stringify(books));
+      loadBooks();
+    }
+  </script>
+</body>
+</html>
